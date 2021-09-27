@@ -1,0 +1,320 @@
+first we have created three spring boot application and all three are using only one,maven 
+dependency i.e web, which enable the rest service.
+when all three are independently working , then we can go for the making the communicating using RestTemplate.
+_>we will create the RestTemplate objet in the application where we want to consume the services.
+  we will pass the url and type of Model returns and we got the service.
+e.g-
+
+RestTemplate rt=new RestTemplate();
+	@RequestMapping("/{userId}")
+	public List<CatalogItem> getCatalog(@PathVariable("userId") String userId)
+	{
+		//return Collections.singletonList(
+			//	new CatalogItem("Three Idiot","top movie",9));
+
+		Movie movie=rt.getForObject("http://localhost:8082/movies/abhi", Movie.class);
+		Rating rating=rt.getForObject("http://localhost:8083/rating/abhi", Rating.class);
+		return Collections.singletonList(
+				new CatalogItem(movie.getName(),"Desc is staic",rating.getRating())	);
+	}
+	
+=>The model class must be present wich is coming as object and each class must have default constructor.
+
+=>Declering RestTemplate in the class leval is not a good practice, when we hit the url it will be created and when method execute then it will be wipe away.
+we can make it like it would create once and we can use anywhre in the application. .i.e we can create @Bean in the main method and we can autowired anywher 
+in the applicaion. it will run once when application load.
+
+e,g-
+@SpringBootApplication
+public class MovieCatalogServiceApplication {
+
+	@Bean//-producer
+	public RestTemplate getRestTemplate()
+	{
+		return new RestTemplate();
+		
+	}
+
+	public static void main(String[] args) {
+		SpringApplication.run(MovieCatalogServiceApplication.class, args);
+		System.out.print("hello world");
+	}
+
+}
+
+=>when we do autowired the bean method will be called and data will be injected only once.
+	@Autowired//consumer 
+	public RestTemplate rt;
+
+									-WebClient-
+
+This is asynchronous way to communicated with the microservices.
+we use this the same way what we did in the resttemplate.
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
+		</dependency>
+e.g-
+
+public List<CatalogItem> getCatalog(@PathVariable("userId") String userId)
+	{
+		WebClient.Builder builder=WebClient.builder();			-->webClient decleration.
+	
+		Movie movie=builder.build() 
+				.get()						->type of request we are making 
+				.uri("http://localhost:8082/movies/abhi")	-->the resources we wana access
+				.retrieve()					-->get the data form there
+				.bodyToMono(Movie.class)			-->it means we will get the data but not now, keep waiting for it.
+				.block();					-->it will block the wait when we get the data.
+
+		Rating rating=rt.getForObject("http://localhost:8083/rating/abhi", Rating.class);
+		return Collections.singletonList(
+				new CatalogItem(movie.getName(),"Desc is staic",rating.getRating())	);
+	}
+
+->for the good practice we can declear as bean and autowired inside the class
+
+	@Bean
+	public WebClient.Builder getWebClientBuilder()
+	{
+		return WebClient.builder();
+	}
+
+
+==>IMPORTANT
+
+-when we are consuming list of any object then we can't recieve it in array, like we expect to do it in object only.
+suppose we are getting list of Rating , we have rating class to recieve the object but not list of object . in this case we create new class which contain
+the array of of the Rating object, that will be used to accept the list.
+->Webclient is for async and sync as well
+
+						-Hard-cording data is not a good practice--
+
+1.Changes require code updates
+2.Dynamic URLs in the cloud
+3.Load balancing
+4.Multiple environment.
+				Solution-Discovery service(its a patteran)
+
+Discovery server is the middle man of services and client. this server know all the services url and it let it know to the client.
+All the services will get it self register to the discovery server then they will be aknowled by server.
+THen discovery service will provide the url of services to the client.
+
+=>Spring cloud uses Client side Discovery
+
+=>TEchnology used for this server is :EUREKA,NEtFIlx oss,RIbbon,Hysterix,Zuul.
+
+=>for the implementation ,Discovery server will be eureka Server and services are eureka Clents .
+
+	Steps=>
+start up a eureka server
+Have microservices register using eureka client.
+have microservice locate (consume) using eureka clent.
+
+							EUREKA server-(movie-catalog and movie-rating services are the clinets)
+
+Create spring boot application formm sprin.io and add dependency Eureka server.
+then it will became eureka server.
+*->@EnableEurekaServer is used on main class to make it decler server.
+->THese code must be ther in application .proerties file of server application
+
+eureka.client.register-with-eureka=false
+eureka.client.fetch-registry=false
+server.port=8761
+_>the first two line is avoiding the server to resgister to it self , becasuse every server is aslo client.
+
+=>for making the services eureka client we only need to add dependency of eureka client and autometically it will register with the eureka server.
+The spring.application.name of serviec will be shown on the server.
+
+->adding extra in pom file-
+
+		<properties>
+		<java.version>1.8</java.version>
+		<spring-cloud.version>2020.0.3</spring-cloud.version>//update this version 
+	</properties>
+		</dependency>
+			<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>//this is for the client
+		</dependency>
+
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>${spring-cloud.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+
+
+=>spring.application.name={MovieInfoService} for setting the name of the application.
+
+							How to get data from eureka server
+=>When we want to call any service we will take help of RestTemplate to get the service details form the server and make serviece call.
+
+	@Bean
+	@LoadBalanced				   =>this will take the communicate with the eureka
+	public RestTemplate getRestTemplate()
+	{
+		return new RestTemplate();
+		
+	}
+=>Movie movie=rt.getForObject("http://MOVIECATALOG/movies/abhi", Movie.class); /at the place of localhost:8082 we are passing the name of the application
+which is resgister to the eureka server, when this call will made , this will take the port address of this name from the eureka server and then make the 
+service call. @LoadBalanced is mendatoray for this .
+This will load balance at the client side.
+							Fault tolranance and resisliance
+
+=>Eureka client has hartbeat which always ping eureka server that i am alive, if it does't do for some time ,the eureaka servr will disconnet itself.
+=>when eureka server is down the it won't get response then it tool from catche
+
+Fault Tolerance-This is the tolarance power of the fault i.e how much fault can be acceptable or when one service is down what is effect on other like all are down or what.
+Resilience- How much fault can a system tolrate before goes down is resilence, how much sysetem bounce back whe one of them down.
+
+The demo is shown in -Discovery-server,Movie-catalog,movie-info,rating-service microservices.
+							
+							Feign client
+ in the consumer-we decler interface and put the method signature of the methos which we are going to consume.
+
+@SpringBootApplication
+@EnableFeignClients
+public class Application {
+
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+
+}
+iNterface-
+@FeignClient("stores")//name of the service
+public interface StoreClient {
+    @RequestMapping(method = RequestMethod.GET, value = "/stores")
+    List<Store> getStores();
+
+    @RequestMapping(method = RequestMethod.POST, value = "/stores/{storeId}", consumes = "application/json")
+    Store update(@PathVariable("storeId") Long storeId, Store store);
+}
+
+=>By creating the refrance of the interface we can access these methods.
+
+							Next project-Microservices
+
+Application	Ports
+limits-service	8080,8081..
+Spring-cloud-config-server	8888
+Currency-exchange-service	8000,8001,8002..
+Currency-calculation-Service	8100,8101,8102…
+Nexflix Eureka Naming Server	8761
+Netflix Zuul Gateway Server	8765
+Zipkin Distributed Tracing server	9411
+
+
+
+					=>Set the data inside the application.properties file of Lits-service.
+
+spring.application.name=limits-service
+limits-service.minimun=99
+limits-service.maximum=100
+
+=>get the data inside the class=>
+
+@Component
+@ConfigurationProperties("limits-service")
+
+This will inject the data inside the variable of the class and we can aceess to those data using getter methods of this class-object.*******
+
+
+
+git===>spring cloud configserver=>----Currency-calculation-Service
+				  |----limits-service}
+				  |----Currency-exchange-service}
+
+								Spring-cloud-config-server
+=>This server is work as channel in which data will be availabe at the git and services will be commnutincating to config-server and congfig server wll 
+communicate with git and give the data to services .
+
+=>Crate the spring boot project with  dependency -Config Server  and dev.
+It will became the config server
+
+		=>Install git on the local system(to store our file)
+=>navigate to any folder and create local git repository
+->right click->git bash here->mrdir folder name->navigate to this folder->initialise the git respo->git init->
+->now connect the git repo to out application.
+->goto the config-server-application.->right click->build-path->config buildpath->link source ->browse to the git-repository folder we create and finish.
+->The repository willbe linked to out server.
+->now crate one txt file in the git repository and put the data of application.properties file into it->
+limits-service.minimun=99
+limits-service.maximum=100
+
+=?>To make any change in this file weneed to push to the git, goto the repository folder and git bash and <-git staus-> there to know the status.
+=>git add litmits-service-configuration.txt -to add the file to repositoru
+=>git status->
+
+$ git status
+On branch master
+
+No commits yet
+
+Changes to be committed://this is showing we need to commit the changes
+  (use "git rm --cached <file>..." to unstage)
+        new file:   litmits-service-configuration.txt
+=>commit the change ->$ git commit -m "first commit"
+
+=>In case the commit is not woking we can pss the emial if we not given at beging-
+-git config --global user.email "abhijeeet.kumar@gmail.com"
+=>Git push willnot work here beacuse it is the local repository not remote
+
+							=>When we make change in file in this git folder we need to do 
+git add -A  for adding the changes
+git push -m "message"-to push the changes in the file
+
+		=>connect the spring cloud config server to the git repo
+we will pass the path 
+=>spring.cloud.config.server.git.uri=file://C:/Users/839938/Eclipse workstation/git-repository
+then we can chk this ->http://localhost:8888/litmits-service-configuration/default
+o/p- (before this change the file extention .txt to .properties)
+
+
+{
+"name": "litmits-service-configuration",
+"profiles":[
+"default"
+],
+"label": null,
+"version": "fba902c47abb0583d60472d583359f6eccdf21d0",
+"state": null,
+"propertySources":[
+{
+"name": "file://C:/Users/839938/Eclipse workstation/git-repository/file:C:\\Users\\839938\\Eclipse workstation\\git-repository\\litmits-service-configuration.properties",
+"source":{
+"limits-service.minimun": "10",
+"limits-service.maximum": "20000"
+}
+}
+]
+}
+
+
+=>till now (git)->spring cloud config server connection done.
+
+Resource-https://youtu.be/G6CtysUkmJs
+
+=>NO we will get the data in the limit service from the git.
+->change application.properties file nama to bootstrap.properties file
+->add the path of config server to the limits service property file for the communication-
+spring.cloud.config.uri=http://localhost:8888  //config server url
+

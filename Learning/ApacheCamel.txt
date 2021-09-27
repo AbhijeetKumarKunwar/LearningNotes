@@ -1,0 +1,590 @@
+->Apache camel
+open source enterprise integration framework.
+Easily integrate systems consuming or producing data. it can integrate with core java, spring,boot and many more
+prodivides 100+ components for database, messageques, apis, cloud integration.
+supports 200+ protocols,transport and data formats.
+provides Domain specific language customized to suit needs of application integration.
+
+->Application created for the sending the file from one folder to another.
+public static void main(String args[]) throws Exception
+	{
+		
+		CamelContext context=new DefaultCamelContext();
+		//Router --
+		context.addRoutes(new RouteBuilder()
+				{
+			@Override
+			public void configure() throws Exception{
+				
+				from("file:input_box?noop=true") //from input folder to ouput folder file will be copied
+				.to("file:output_box");
+			}//it will create the folder with given name and when we create file into it, it wll be copey to destination.
+			
+				});
+		     while(true)
+	
+			context.start();
+		
+		//when we run the application and refresh it , it will create the 
+		
+	}
+	
+
+->sending message form producer template to consumer template.
+public static void main(String areg[]) throws Exception
+	{
+		CamelContext context=new DefaultCamelContext();
+		//router definition-
+		context.addRoutes(new RouteBuilder(){
+			@Override()
+			public void configure() throws Exception{
+				
+			from("direct:start")//direct is the starting url and seda is destination end point.
+			.to("seda:end");//direct and seda are build it defined.
+			}
+		}
+		);
+		context.start();
+		//producer tempalte is producing and sending the message
+		ProducerTemplate produce=context.createProducerTemplate();
+		produce.sendBody("direct:start", "Hello this is producer template");
+		
+		//consumer template is consuming the message from the producer tempalte.
+		ConsumerTemplate consumer=context.createConsumerTemplate();
+		String message=consumer.receiveBody("seda:end", String.class);
+		System.out.println(message);
+				
+	}
+
+
+->adding process -
+public static void main(String arg[]) throws Exception
+	{
+
+		CamelContext context=new DefaultCamelContext();
+		//router definition-
+		context.addRoutes(new RouteBuilder(){
+			@Override()
+			public void configure() throws Exception{
+				
+			from("direct:start")
+			.process(new Processor()
+					{
+
+				public void process(Exchange exchange) throws Exception
+				{
+					//System.out.println("I am process..");
+					//the is the proces between produce and consume.
+					//we can aslo make modification in the send message here.
+					String message=exchange.getIn().getBody(String.class);//to get the sent data
+					message=message+" by Abhieet kumar";
+					exchange.getOut().setBody(message);//send the data back 
+					
+				}
+					})
+			.to("seda:end");
+			}
+		}
+		);
+		context.start();
+		
+		ProducerTemplate produce=context.createProducerTemplate();
+		produce.sendBody("direct:start", "Hello this is producer template");
+		
+		
+		ConsumerTemplate consumer=context.createConsumerTemplate();
+		String message=consumer.receiveBody("seda:end", String.class);
+		System.out.println(message);
+				
+	}
+
+=>download apacheactivemq for windows and goto bin folder and launch the cmd and write-activemq start.
+then goto the port given on the screen. and login with admin ,admin
+=>put the activemq:camel maven dependency to the pom file.
+
+=>Apache camal hide all the complexity so you can focus on your business logic for integration.
+Threre are three components-
+Jms components
+Http components
+File components
+These are the interfaces.
+
+
+
+SET PROPERTY
+The SetProperty EIP allows you to set a property on your exchange.
+
+When you need to conditionally route a message based on some fact, you can use the choice and when constructs.
+
+These are quite similar to the if/else construct in Java. However, in Camel, the equivalent words are when and otherwise.
+from(anEndpoint)
+    .choice()
+        .when(someCondition).to(firstEndpoint)
+        .when(anotherCondition).to(secondEndpoint)
+    .otherwise()
+        .to(thirdEndpoint)
+    .end();
+Notice how:
+
+We start the block with choice() - this tells Camel that the following lines will contain some conditions to evaluate.
+
+Each when() method indicates a new condition to be evaluated, similar to an if in core Java
+
+The method otherwise() defines what to do when none of the previous when() conditions equal true.
+
+The block ends with a .end().
+
+
+
+
+
+								Apache camel with Spring boot.
+
+Create two boot application.
+and create one file like this-		Router class---
+
+
+package com.apache.camelmicroservicea.routesA;
+
+import java.time.LocalDateTime;
+
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.logging.log4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component //for crateating class as router
+public class MyFirstTImerRouter extends RouteBuilder{
+
+	@Autowired
+	private GetCurrentTimeBean getCurrentBean; 
+	
+	@Autowired
+	
+	private GetProcess getProcess;
+	
+	@Override
+	public void configure() throws Exception {
+		// TODO Auto-generated method stub
+		//timer
+		//transformation
+		//log
+		//form is the staring point.
+
+		from("timer:first-timer")//we are listening on the timer end point-null value
+		//.transform().constant("This is the constant mesage")//we pickup the null form the timer end point , transform it and set the message.
+        	 //processing     the body changes in the transform but not in processing.
+		//.transform().constant("The time is :"+LocalDateTime.now())//This will print the local date and time
+		.log("${body}")//null(body of messsGE)
+		.bean(getCurrentBean)
+		.log("${body}")//The Time is 2021-08-15T09:05:04.717 
+		.bean(getProcess,"process")//The body value will be passed when we will have parameter mehtod in the Bean classs
+		.to("log:first-timer");
+		//timer and log are the key words
+		//Exchange[ExchangePattern: InOnly, BodyType: null, Body: [Body is null]]
+		
+		
+		
+	}
+
+}
+@Component
+ class GetCurrentTimeBean{
+	public String getCurrentBean(String s)
+	{
+		System.out.println(s);
+		return "The Time is "+ LocalDateTime.now();
+	}
+}
+@Component
+class GetProcess{
+	private org.slf4j.Logger logger=LoggerFactory.getLogger(GetProcess.class);
+	public void process(String st)
+	{
+		logger.info("The process component message {}\n",st);
+		
+	}
+}
+
+
+=>Process can also be createad using process method-----------
+
+
+.process(new SimpleLoggingProcessor())//Exchange[ExchangePattern: InOnly, BodyType: String, Body: The Time is 2021-08-15T09:43:57.742]
+		//while executing the prcess , we can get the message and body of this scope.
+		
+
+class SimpleLoggingProcessor implements Processor {
+
+	 private org.slf4j.Logger logger= LoggerFactory.getLogger(SimpleLoggingProcessor.class);
+	@Override
+	public void process(Exchange exchange) throws Exception {
+		// TODO Auto-generated method stub
+		logger.info("SimpleLoggingProcessor {}",exchange.getMessage().getBody());//the body of the current process
+
+	}
+
+}
+
+
+								Create Camel route to play with files
+=>when we will remove the @Component from the above class,it willl be no longer the router class and will not excute autometically when application runs.
+=>we are doing so ,to create new route.
+
+package com.apache.camelmicroservicea.routesB;
+
+import org.apache.camel.builder.RouteBuilder;
+import org.springframework.stereotype.Component;
+@Component
+public class MyFileRouter extends RouteBuilder{
+
+	@Override
+	public void configure() throws Exception {
+		// TODO Auto-generated method stub
+		from("file:files/input")//we picking the file from one end point
+		.log("${body}")
+		.to("file:files/output");//moving the file to this end point
+		
+	}
+//when this code is execute the "file" folder is created with input as sub folder ,but when we put file into the input
+//output folder is created and file will be moved to it and log will print the content of the file on the logger as process.	
+}
+
+				--Making Http Rest Api Calls form a Camel ROute--
+
+->for rest we need to add this dependency-
+		<dependency>
+			<groupId>org.apache.camel.springboot</groupId>
+			<artifactId>camel-http-starter</artifactId>
+			<version>3.11.1</version>
+		</dependency>
+
+
+@Component
+public class RestApiConsumerRouter extends RouteBuilder {
+
+	@Override
+	public void configure() throws Exception {
+		// TODO Auto-generated method stub
+		
+		restConfiguration().host("localhost").port(8000);
+		//This is setting the server port for the communication.
+		from("timer:rest-api-consumer?period=10000")//This timer end point will make the rest call in every 10 sec via "to" url.
+		.log("${body}")//null
+		.to("rest:get:/currency-exchange/from/usd/to/INR")//rest:get end will make requst to the given url
+		
+		.log("${body}");//{"id":10001,"from":"usd","to":"INR","conversionMultiple":10}
+		
+	}
+
+}
+->At the place of hardcoiding url value we can also use SetHeader method to add dynamica value.
+
+
+		restConfiguration().host("localhost").port(8000);
+		//This is setting the server port for the communication.
+		from("timer:rest-api-consumer?period=10000")//This timer end point will make the rest call in every 10 sec via "to" url.
+		.log("${body}")//null
+		.setHeader("from",()->"EUR")//use lambda expression to set the header
+		.setHeader("to",()->"INR")
+		.to("rest:get:/currency-exchange/from/{from}/to/{to}")//rest:get end will make requst to the given url
+		
+		.log("${body}");//{"id":10001,"from":"usd","to":"INR","conversionMultiple":10}
+		
+
+
+Updated--
+
+public void configure() throws Exception {
+		// TODO Auto-generated method stub
+		from("file:files/input")//we picking the file from one end point
+		
+		.routeId("Files-input-Route")//adding the route id it the route
+		.transform().body(String.class)//convert the data of the file into the string
+		.choice()//conditional statement
+			.when(simple("${file:ext} ends with 'xml'"))//if this is true,simple() is the language to write the conditional statement
+				.log("XML FIle")
+			.when(simple("${body} contains 'USD'"))
+				.log("NOt XML but contained USD")
+				
+			.otherwise()
+				.log("not an XML file ")
+			
+		.end()//conditional statement is end here.
+		.log("${body}")
+		.log("${messageHistory} ${file:absolute.path}")
+		//we can get multiple thing there-   camel.apache.org/components/latest/languages/file-language.html
+		.to("file:files/output");//moving the file to this end point
+		
+		//there are lots of operator are there in simple language ends with,== ,contains,etc
+	}
+//when this code is execute the file foler is created with input as sub folder ,but when we put file into the input
+//output folder is created and file will be moved to it and log will print the content of the file on the logger as process.	
+}
+
+
+					Reuseble component
+
+
+.to("direct://log-file-values") //call of reuseble compon
+		.to("file:files/output");//moving the file to this end point
+		
+		
+		
+		
+		//This can be reused when used in to()--
+		from("direct://log-file-values")
+		.log("${messageHistory} ${file:absolute.path}")
+		.log("{file:name} ${file:name.ext} ${file:name.noext} ${file:onlyname}")
+		.log("${file:path}")
+		.log("${file:size} ${file:modified}")
+		.log("${routeId} ${camelId} ${body}");
+	
+
+
+					Creating Complex Deciders for choice in camel route
+
+=>
+Conditions->
+.when(method(deciderBean))//when bean the class will be paseed it would also pass the body of route too
+.log("NOt XML but contained USD")
+
+
+Definition of the condition-
+
+@Component 
+class DeciderBean{
+	
+	Logger logger=LoggerFactory.getLogger(DeciderBean.class);
+
+
+//we can add header to the method which will recive the headers and @Body will accept the body,(either it is optional)	
+//we can get lots of data from our request 
+
+
+	public boolean isThisCondtionMet(@Body String body,
+		@Headers Map<String,String> headers,  @ExchangeProperties Map<String,String> exchangeProerties)
+	{
+		logger.info("Decider bean {} and headers {} and exchange Properties  {}",body,headers,exchangeProerties);
+		
+		return true;
+	}
+
+
+
+}
+o/p-body->{  "id": 1000,
+  "from": "USD",
+  "to": "INR",
+  "conversionMultiple": 70
+}
+o/p-Headers-
+ and headers {CamelFileAbsolute=false, CamelFileAbsolutePath=C:\Users\839938\Eclipse workstation\camel-microservice-a\files\input\1000.json,
+ CamelFileLastModified=1629001504096, CamelFileLength=76, CamelFileName=1000.json, CamelFileNameConsumed=1000.json, CamelFileNameOnly=1000.json,
+ CamelFileParent=files\input, CamelFilePath=files\input\1000.json, CamelFileRelativePath=1000.json, CamelMessageTimestamp=1629001504096} 
+
+o/p-
+and exchange Properties  {CamelFileExchangeFile=GenericFile[1000.json]}
+
+
+				Exploring pipline and Multicast EI pattern in camel
+
+->PipeLIne-It is the sequence of steps
+
+You can create pipelines of logic using multiple Endpoint or Message Translator instances as follows
+
+Though pipeline is the default mode of operation when you specify multiple outputs in Camel. The opposite to pipeline is multicast; which fires the same message into each of its outputs. (See the example below).
+
+In Java you do:
+
+from("activemq:SomeQueue")
+    .pipeline()
+      .bean("foo")
+      .bean("bar")
+      .to("acitvemq:OutputQueueu");
+The pipeline is the default mode, which can be omitted, and therefore you almost often write as:'
+It is default for setting any conditon like log we have implemented.
+
+
+=>Multicast->
+@Component
+public class EipPatternsRouter  extends RouteBuilder{
+
+	@Override
+	public void configure() throws Exception {
+
+		from("timer:multicast?period=10000")
+		.multicast()
+		.to("log:something1","log:something2");//multiple log
+		//using this multicast we can send message to different end point at the same point of time
+		//like at log, restendpoint,kafka,activeMq all together at a time.
+	
+	}
+
+}
+o/p->For every 10 section both routte will be called.
+ 					[mer://multicast] something1                              \
+2021-08-16 08:34:21.918  INFO 24508 --- [mer://multicast] something2                               : Exchange[ExchangePattern: InOnly, BodyType: null, Body: [Body is null]]
+2021-08-16 08:34:31.917  INFO 24508 --- [mer://multicast] something1                               : Exchange[ExchangePattern: InOnly, BodyType: null, Body: [Body is null]]
+2021-08-16 08:34:31.917  INFO 24508 --- [mer://multicast] something2                               : Exchange[ExchangePattern: InOnly, BodyType: null, Body: [Body is null]]
+ : Exchange[ExchangePattern: InOnly, BodyType: null, Body: [Body is null]]
+
+					Cotent Based Routing and Splitter EI patterns
+->When we are using choice pattern we are using content based routing bcz based on the route content  coming in we  do routing
+		
+		.choice()// COntent based routing 
+			.when(simple("${file:ext} ends with 'xml'"))
+				.log("XML FIle")
+		
+			.when(method(deciderBean))
+				.log("NOt XML but contained USD")
+				
+			.otherwise()
+				.log("not an XML file ")
+
+->Split pattern-
+For using csv routeer used this-
+		<dependency>
+			<groupId>org.apache.camel.springboot</groupId>
+			<artifactId>camel-csv-starter</artifactId>
+			<version>3.11.1</version>
+		</dependency>
+
+=>
+		from("file:files/csv")
+		.unmarshal().csv()//This will send the seprate line data , when file move from the csv foldre
+		.split(body())
+		.to("log:split-files");
+
+The above code will split the content line by line.
+
+=>spliting the content on the dilamiter-
+
+//we have message like-message1,message2,message3 we have to print each message as new line.
+		
+		from("file:files/csv")
+		.convertBodyTo(String.class)//The message body will be convverted into the string.
+		.split(body(),",")//it will split on the delimiter of ','
+		.to("log:split-files");
+
+
+=>Splitting the same using component=>
+		from("file:files/csv")
+		.convertBodyTo(String.class)//The message body will be convverted into the string.
+		.split(method(splitter))
+		//.split(body(),",")//it will split on the delimiter of ','
+		.to("log:split-files");
+	}
+
+	@Component
+	class SplitterComponent
+	{
+		public List<String> splitInput(String body)
+		{
+			return Arrays.asList(new String[]{"ABC","DEF","GHI"});
+		}
+	}
+}
+2021-08-16 10:54:46.921  INFO 19748 --- [ile://files/csv] split-files                              : Exchange[ExchangePattern: InOnly, BodyType: String, Body: ABC]
+2021-08-16 10:54:46.922  INFO 19748 --- [ile://files/csv] split-files                              : Exchange[ExchangePattern: InOnly, BodyType: String, Body: DEF]
+2021-08-16 10:54:46.922  INFO 19748 --- [ile://files/csv] split-files                              : Exchange[ExchangePattern: InOnly, BodyType: String, Body: GHI]
+
+
+					Aggregate(the splitted message)
+messages=>aggregate till the condition set=>send to endpoint 
+
+=>>>> Routing slip->Dynamic routing.depends on the business logic .
+
+	String routingSlip="direct:endpint1,direct:endpoint2";//route information
+		
+		
+		from("timer:routingSlip?period=10000")
+		.transform().constant("My message is hardcoded")
+		.routingSlip(simple(routingSlip));
+		
+		
+		from("direct:endpoint1")
+		.to("log:directendpoint1");
+		
+		from("direct:endpoint3")
+		.to("log:directendpoint2");
+
+		from("direct:endpoint2")
+		.to("log:directendpoint2");
+		
+
+
+=>Dynamic routing
+
+	@Autowired
+	private DynamicRouterBean dynamicRouterBean;
+
+
+		from("timer:dynamicROute?period=10000")
+		.transform().constant("My message is hardcoded")
+		.dynamicRouter(method(dynamicRouterBean));
+
+
+
+Reciver of the router-
+from("direct:endpoint1")
+		.to("log:directendpoint1");
+		
+		from("direct:endpoint2")
+		.to("log:directendpoint2");
+		from("direct:endpoint3")
+		.to("log:directendpoint3");
+		
+
+
+The above routing will be called on every 10 second and logic of route is given in the component
+->@Component
+class DynamicRouterBean{
+	int invocation;
+	
+	Logger logger=LoggerFactory.getLogger(DynamicRouterBean.class);
+	public String decideTheNextEndpoint(
+			@ExchangeProperties Map<String,String> properties,@Headers Map<String,String> headers
+			,@Body String body)
+	{
+		logger.info("{} {} {}",properties,body,headers);
+		
+		 invocation++;
+		 if(invocation%3==0)
+		return "direct:endpoint1";
+		 if(invocation%3==1)
+			 return "direct:endpoint2,direct:endpoint3";
+		 
+		 return null;
+		
+	}
+}
+=>Reading the data from the propertites files--
+endpoint-for-logging=log:directendpoint1
+timeperiod=100000
+
+from("{{endpoint-for-logging}}")
+-."timer:dynamicROute?period={{timeperiod}}"
+
+using "{{}}" we can read the data form the .properites file
+
+=>logging.leval.org.apache.camel.impl=DEBUG-it will lots of information abot  running of code.
+=>For the tracing we use -getContext().setTracing(true)-this will  print the log whateven is going on .
+=>erroHandler(deadLetterChannel("end point will ge the error"));
+another important one is ->
+wireTap("")-this will tab the message to the given endpoint .
+
+2. @PostConstruct
+Spring calls methods annotated with @PostConstruct only once, just after the initialization of bean properties. Keep in mind that these methods will run even if there is nothing to initialize.
+
+The method annotated with @PostConstruct can have any access level but it can't be static.
+
+One example usage of @PostConstruct is populating a database. During development, for instance, we might want to create some default users:
+
+
+									JDBC component
+Example for the sql data -
+create db,table and insert some data.
+Add jdbc camel dependency
+add depencdecny of mysql connector java

@@ -1,0 +1,79 @@
+							IBM API Connect
+IBM® API Connect is an API management solution from IBM that offers capabilities to create,
+run, manage, and secure APIs and microservices, thus managing the full lifecycle of APIs for
+both on-premises and cloud environments
+
+-> Mobile<---->(IBM API CONNECT)<----->social media
+				|<----->weather
+				|<------>payment gateway
+All api request going through ibm connect
+
+API-it is a set of functions or protocols that can be used for devloping  as software appliation and to expose ou business.
+we have many platforms that expose API's-
+IBM api connect-2015 v1
+Apigee
+mulesoft
+Tibco
+CA layer
+Micrsoft azure
+
+API types-
+Public api- open to every one
+private api-only accessible to company .
+patner api- only to the Internal patner
+
+API  Economy-Economically by investing and make profie of usin api who are consuming it.
+When we customer using api we can make profit.
+We pay devloper for building an application using those API's.
+
+				Api connect
+->It can work as api gateway.
+->the depedencies are Node.js,pyhton,NPM 
+						Component of APi connct(https://www.ibm.com/docs/en/api-connect/5.0.x?topic=concepts-api-connect-components#capim_overview_apiconnectcomponents__section_cloudmgr)
+Cloud Manager
+The developer toolkit
+API Manager
+API Gateways
+Application runtime/Containerized runtime/API Connect Collective
+Developer Portal
+Typical tasks per interface component
+API Connect server requirements
+Demo- 
+consoles-
+1=>cmc-cloud manager console.it completely admin work.
+2->Api manager-we create  api, proxy and publish. it genrallay for devloper
+3=>Devloper portal- ->consumer,=>it consumer point of view ,login and test api
+4=>Devloper tool kit(API designer)-it genrally for CI/CD.(devlopment work)
+
+previsously- to now
+api management 4.x
+IBM+stongloop(loop vack application and connectors)
+APIC 5.x
+
+Devlopment flow--> 
+API(Designer)->publish product(API manager)->Devloper portal
+
+API(Api manager)->publish(api manger)->image of the product will be shown in devloper portal
+
+API 		 +  Plan     			=>product
+(logic)  (subscripton approval,rate limits)       (api+plan)
+
+product1    product1
+
+api1 api2
+
+we can have multiple api for every  product but each api have one plain.
+
+catalog-dev,test,qa,prod\
+Gateways-->datapower,micro gateway
+datapower-virtual or physical appliances.
+cmc-cloud  management console-we configre servers -gateway server or managemnt server.,,microGateway.
+Analystic(servers matrix),servers
+
+User roles-adminm toplogy,syster user, organisation owner.
+
+Organization-provider organization and devloper organization.
+
+						Auth2.o
+For the hotel we show our id card then we get key(to its autharization) key is tocken and aceesing roomis related to the accessing the api.
+so , it requred autharization,access tocken and then api acces

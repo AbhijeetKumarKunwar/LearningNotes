@@ -1,0 +1,7 @@
+IBM dashboard->add new catalog->clicl on the catalog
+click on ">>" on the header->draft-> Products  APIs
+
+Api->new Api->fill details
+create the product and add the api into it .
+goto the design and add the path and also check what are the operatio we added
+publish the api
